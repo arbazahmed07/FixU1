@@ -49,47 +49,47 @@ export default function HomePage() {
       <section className="bg-black px-4 pb-16">
         <div className="container mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
+            <Link href="/services/plumbing" className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
               <div className="flex justify-center mb-3">
                 <Wrench className="text-orange-500 w-10 h-10" />
               </div>
               <h3 className="text-lg font-medium text-white">Plumbing</h3>
-            </div>
+            </Link>
 
-            <div className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
+            <Link href="/services/electrical" className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
               <div className="flex justify-center mb-3">
                 <Zap className="text-orange-500 w-10 h-10" />
               </div>
               <h3 className="text-lg font-medium text-white">Electrical</h3>
-            </div>
+            </Link>
 
-            <div className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
+            <Link href="/services/electronics" className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
               <div className="flex justify-center mb-3">
                 <MonitorSmartphone className="text-orange-500 w-10 h-10" />
               </div>
               <h3 className="text-lg font-medium text-white">Electronics</h3>
-            </div>
+            </Link>
 
-            <div className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
+            <Link href="/services/ac-services" className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
               <div className="flex justify-center mb-3">
                 <Snowflake className="text-orange-500 w-10 h-10" />
               </div>
               <h3 className="text-lg font-medium text-white">AC Services</h3>
-            </div>
+            </Link>
 
-            <div className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
+            <Link href="/services/maintenance" className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
               <div className="flex justify-center mb-3">
                 <ShieldCheck className="text-orange-500 w-10 h-10" />
               </div>
               <h3 className="text-lg font-medium text-white">Maintenance</h3>
-            </div>
+            </Link>
 
-            <div className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
+            <Link href="/services/home-care" className="bg-gray-900 rounded-lg p-6 text-center hover:bg-gray-800 transition-colors cursor-pointer">
               <div className="flex justify-center mb-3">
                 <HomeIcon className="text-orange-500 w-10 h-10" />
               </div>
               <h3 className="text-lg font-medium text-white">Home Care</h3>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
