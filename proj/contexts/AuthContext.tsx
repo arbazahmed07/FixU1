@@ -8,6 +8,7 @@ interface User {
   name: string;
   email: string;
   phone?: string;
+  isAdmin?: boolean; // Add isAdmin flag
 }
 
 interface AuthContextType {
@@ -19,6 +20,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
+  isAdmin: boolean; // Add isAdmin state
 }
 
 interface RegisterData {
@@ -36,36 +38,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false); // Add admin state
   const router = useRouter();
 
   useEffect(() => {
     const initAuth = async () => {
+      setLoading(true);
       try {
-        const storedToken = localStorage.getItem('auth-token');
-        const storedUser = localStorage.getItem('auth-user');
+        // Try to get token from localStorage first (for backwards compatibility)
+        let storedToken = localStorage.getItem('auth-token');
+        let storedUser = localStorage.getItem('auth-user');
         
+        // If token exists, use it to set the auth state
         if (storedToken && storedUser) {
+          const parsedUser = JSON.parse(storedUser);
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          setUser(parsedUser);
           setIsAuthenticated(true);
-          
-          document.cookie = `auth-token=${storedToken}; path=/; max-age=604800; SameSite=Lax`;
-
-          try {
-            const response = await fetch('/api/auth/validate', {
-              headers: {
-                'Authorization': `Bearer ${storedToken}`
-              }
-            });
-
-            if (!response.ok) {
-              clearAuthState();
-            }
-          } catch (err) {
-            console.error("Error validating token:", err);
-          }
+          setIsAdmin(parsedUser.isAdmin || false);
         } else {
-          clearAuthState();
+          // If not in localStorage, check if we have a session by making an API call
+          const response = await fetch('/api/auth/me', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Important: include cookies
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setToken(data.token);
+            setUser(data.user);
+            setIsAuthenticated(true);
+            setIsAdmin(data.user.isAdmin || false);
+            
+            // Also store in localStorage for backwards compatibility
+            localStorage.setItem('auth-token', data.token);
+            localStorage.setItem('auth-user', JSON.stringify(data.user));
+          } else {
+            clearAuthState();
+          }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -82,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
+    setIsAdmin(false); // Reset admin state on logout
     localStorage.removeItem('auth-token');
     localStorage.removeItem('auth-user');
     document.cookie = 'auth-token=; path=/; max-age=0';
@@ -92,6 +106,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     
     try {
+      // Special case for admin
+      if (email === 'admin' && password === 'admin123') {
+        const adminUser = {
+          id: 'admin-id',
+          name: 'Administrator',
+          email: 'admin@fixu.in',
+          isAdmin: true
+        };
+        
+        // Create a mock token for admin
+        const adminToken = 'admin-token-' + Date.now();
+        
+        setToken(adminToken);
+        setUser(adminUser);
+        setIsAuthenticated(true);
+        setIsAdmin(true);
+        
+        localStorage.setItem('auth-token', adminToken);
+        localStorage.setItem('auth-user', JSON.stringify(adminUser));
+        document.cookie = `auth-token=${adminToken}; path=/; max-age=604800; SameSite=Lax`;
+        
+        return;
+      }
+      
+      // Regular user login (existing code)
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -109,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(data.token);
       setUser(data.user);
       setIsAuthenticated(true);
+      setIsAdmin(data.user.isAdmin || false); // Set admin state based on user data
 
       localStorage.setItem('auth-token', data.token);
       localStorage.setItem('auth-user', JSON.stringify(data.user));
@@ -171,6 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     error,
     isAuthenticated,
+    isAdmin, // Add isAdmin to context value
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
