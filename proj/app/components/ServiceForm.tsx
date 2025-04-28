@@ -20,7 +20,7 @@ export default function ServiceRequestPage() {
     message: string;
   } | null>(null)
   
-  const { user, token, isAuthenticated } = useAuth()
+  const { user, token, loading: authLoading, isAuthenticated, isAdmin } = useAuth()
   const router = useRouter()
   
   // Add more detailed logging for debugging
@@ -40,6 +40,16 @@ export default function ServiceRequestPage() {
       }))
     }
   }, [isAuthenticated, user, token])
+
+  // Add this useEffect to handle admin case
+  useEffect(() => {
+    if (isAdmin) {
+      setSubmitStatus({
+        success: false,
+        message: 'Admin accounts cannot place service requests. Please use a regular user account.',
+      });
+    }
+  }, [isAdmin]);
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -131,6 +141,21 @@ export default function ServiceRequestPage() {
       setSubmitStatus({
         success: false,
         message: 'Please log in to submit a service request.',
+      });
+      
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        router.push('/login?from=/book');
+      }, 2000);
+      
+      return;
+    }
+    
+    // Prevent admins from submitting
+    if (isAdmin) {
+      setSubmitStatus({
+        success: false,
+        message: 'Admin accounts cannot place service requests. Please use a regular user account.',
       });
       return;
     }
@@ -411,6 +436,7 @@ export default function ServiceRequestPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
+                      readOnly
                     />
                     {errors.email && (
                       <p className="text-red-500 text-sm mt-1">{errors.email}</p>

@@ -11,7 +11,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isServicesOpen, setIsServicesOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const router = useRouter();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -132,6 +132,14 @@ export default function Header() {
                     {/* <Link href="/bookings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       My Bookings
                     </Link> */}
+                    {isAuthenticated && isAdmin && (
+                      <Link
+                        href="/admin"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Admin Panel
+                      </Link>
+                    )}
                     <button
                       onClick={() => logout()}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -261,6 +269,24 @@ export default function Header() {
                 >
                   My Bookings
                 </Link> */}
+                {isAuthenticated && isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="block py-2 px-4 text-base hover:bg-gray-800"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
+                {isAuthenticated && isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="block py-2 px-4 text-base hover:bg-gray-800"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
                 <button
                   onClick={() => {
                     logout();

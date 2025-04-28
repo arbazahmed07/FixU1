@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Monitor, Megaphone, Heart, Briefcase, ArrowRight, ChevronUp, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useServices } from '../../contexts/ServicesContext';
 import { useRouter } from 'next/navigation';
 
 interface Service {
@@ -13,62 +14,11 @@ interface Service {
   serviceType: string;
 }
 
-const services: Service[] = [
-  {
-    icon: <Monitor className="text-orange-500" size={28} />,
-    title: 'Appliance & AC Services',
-    items: [
-      'Electronics Appliances',
-      'Appliance Repair',
-      'Computer/Laptop Repair',
-      'Air Conditioning',
-      'RO Repair',
-    ],
-    link: '/book-service/appliance-ac',
-    serviceType: 'appliance_repair'
-  },
-  {
-    icon: <Megaphone className="text-orange-500" size={28} />,
-    title: 'Home Repairs & Maintenance',
-    items: [
-      'Plumbing',
-      'Painter',
-      'Electrician',
-      'CCTV Installation',
-    ],
-    link: '/book-service/home-repairs',
-    serviceType: 'plumbing'
-  },
-  {
-    icon: <Heart className="text-orange-500" size={28} />,
-    title: 'Health & Nursing Care',
-    items: [
-      'Medical Care',
-      'Nursing Services',
-      'Elder Care',
-      'Home Healthcare',
-    ],
-    link: '/book-service/health-nursing',
-    serviceType: 'medical'
-  },
-  {
-    icon: <Briefcase className="text-orange-500" size={28} />,
-    title: 'Other Services',
-    items: [
-      'Advertising Services',
-      'On Demand Driver',
-      'Dry Car and Bike Wash',
-      'Creative Services',
-    ],
-    link: '/book-service/other',
-    serviceType: 'advertising'
-  },
-];
-
 const ServicesSection: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const { user, token, isAuthenticated } = useAuth();
+  const { activeServices } = useServices(); // Use the active services from context
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -99,8 +49,14 @@ const ServicesSection: React.FC = () => {
     }
   }, [isAuthenticated, user]);
 
-  const handleBookService = (service: Service) => {
-    setSelectedService(service);
+  const handleBookService = (service: any) => {
+    // Ensure service has the required fields for the Service interface
+    const completeService: Service = {
+      ...service,
+      link: service.link || '#',
+      serviceType: service.serviceType || service.title?.toLowerCase() || 'general'
+    };
+    setSelectedService(completeService);
     setIsModalOpen(true);
     // Reset errors and submit status when opening modal
     setErrors({});
@@ -290,10 +246,11 @@ const ServicesSection: React.FC = () => {
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {services.map((service, index) => (
+          {/* Use activeServices instead of hardcoded services array */}
+          {activeServices.length > 0 ? activeServices.map((service, index) => (
             <div key={index} className="bg-white rounded-lg shadow-md p-8">
               <div className="bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mb-6">
-                {service.icon}
+                {service.icon || <Monitor className="text-orange-500" size={28} />}
               </div>
 
               <h3 className="text-2xl font-bold text-gray-900 mb-4">{service.title}</h3>
@@ -314,7 +271,11 @@ const ServicesSection: React.FC = () => {
                 Book Service <ArrowRight size={18} className="ml-1" />
               </button>
             </div>
-          ))}
+          )) : (
+            <div className="col-span-4 text-center py-12">
+              <p className="text-xl text-gray-600">No active services available at the moment.</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -458,6 +419,7 @@ const ServicesSection: React.FC = () => {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
+                        readOnly
                       />
                       {errors.email && (
                         <p className="text-red-500 text-sm mt-1">{errors.email}</p>

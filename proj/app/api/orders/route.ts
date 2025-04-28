@@ -15,8 +15,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
+    // Special case for admin user
+    if (payload.userId === 'admin-id' || payload.isAdmin === true) {
+      // For admin, return empty orders array or fetch all orders if you want
+      return NextResponse.json({ 
+        orders: [],  // Or fetch all orders from the database for admin view
+        isAdmin: true
+      });
+    }
+
+    // Regular user flow
     await connectDB();
 
+    // Now we know it's a regular user with a valid MongoDB ObjectId
     const user = await User.findById(payload.userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -33,24 +44,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
-    // console.log("Token extracted:", token ? `${token.substring(0, 10)}...` : "No token");
-
     if (!token) {
-      // console.log("No token found in request");
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const decoded = await verifyToken(token);
-    // console.log("Token verification result:", decoded ? "Valid" : "Invalid");
-
     if (!decoded || !decoded.userId) {
-      // console.log("Token verification failed");
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const orderData = await request.json();
-    // console.log("Received order data:", orderData);
+    // Special case for admin user
+    if (decoded.userId === 'admin-id' || decoded.isAdmin === true) {
+      // Admin can't place orders, or handle differently if needed
+      return NextResponse.json({ 
+        error: 'Admin users cannot place orders' 
+      }, { status: 403 });
+    }
 
+    const orderData = await request.json();
     await connectDB();
 
     const user = await User.findById(decoded.userId);
@@ -64,7 +75,6 @@ export async function POST(request: NextRequest) {
     });
 
     await user.save();
-    // console.log("Order saved successfully");
 
     return NextResponse.json({ success: true, message: 'Order saved successfully' });
 
