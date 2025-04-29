@@ -5,38 +5,41 @@ import User from '@/models/User';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get and verify token
+    // Get token from request headers or cookies
     const token = getTokenFromRequest(request);
-    if (!token) {
-      return NextResponse.json({ valid: false }, { status: 401 });
-    }
-
-    const payload = await verifyToken(token);
-    if (!payload) {
-      return NextResponse.json({ valid: false }, { status: 401 });
-    }
-
-    // Connect to DB and confirm user exists
-    await connectDB();
-    const user = await User.findById(payload.userId);
     
-    if (!user) {
-      return NextResponse.json({ valid: false }, { status: 404 });
+    if (!token) {
+      return NextResponse.json({ valid: false, error: 'No token provided' }, { status: 401 });
     }
-
-    // Token is valid and user exists
+    
+    // Verify token and extract user ID
+    const payload = await verifyToken(token);
+    
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ valid: false, error: 'Invalid token' }, { status: 401 });
+    }
+    
+    // If it's an admin token with special ID, it's valid
+    if (payload.userId === 'admin-id') {
+      return NextResponse.json({ valid: true, isAdmin: true });
+    }
+    
+    // For regular users, check if user exists in database
+    await connectDB();
+    
+    const user = await User.findById(payload.userId);
+    if (!user) {
+      return NextResponse.json({ valid: false, error: 'User not found' }, { status: 404 });
+    }
+    
+    // If we get here, token is valid
     return NextResponse.json({ 
       valid: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone
-      }
+      isAdmin: user.isAdmin || false
     });
     
   } catch (error) {
     console.error('Token validation error:', error);
-    return NextResponse.json({ valid: false }, { status: 500 });
+    return NextResponse.json({ valid: false, error: 'Validation failed' }, { status: 500 });
   }
 }

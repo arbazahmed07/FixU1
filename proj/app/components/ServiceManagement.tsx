@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useServices } from '../../contexts/ServicesContext';
 import { Pencil, Trash2, Plus, ToggleLeft, ToggleRight } from 'lucide-react';
 
 interface Service {
@@ -18,6 +19,7 @@ interface Service {
 
 export default function ServiceManagement() {
   const { token } = useAuth();
+  const { refreshServices } = useServices();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export default function ServiceManagement() {
       
       const data = await response.json();
       setServices(data.services);
+      refreshServices();
     } catch (err) {
       console.error('Error fetching services:', err);
       setError('Failed to load services. Please try again.');

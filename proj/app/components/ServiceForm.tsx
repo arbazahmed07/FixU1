@@ -1,7 +1,8 @@
 import React, { useState, ChangeEvent, useEffect } from 'react'
 import { Phone, Mail, MessageCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useServices } from '../../contexts/ServicesContext';
 
 export default function ServiceRequestPage() {
   const [formData, setFormData] = useState({
@@ -21,8 +22,11 @@ export default function ServiceRequestPage() {
   } | null>(null)
   
   const { user, token, loading: authLoading, isAuthenticated, isAdmin } = useAuth()
-  const router = useRouter()
-  
+  const { activeServices } = useServices();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const serviceType = searchParams.get('service');
+
   // Add more detailed logging for debugging
   useEffect(() => {
     console.log("Authentication state:", {
@@ -50,6 +54,16 @@ export default function ServiceRequestPage() {
       });
     }
   }, [isAdmin]);
+
+  // Add this effect to populate the service type from URL
+  useEffect(() => {
+    if (serviceType && activeServices.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        serviceType: serviceType
+      }));
+    }
+  }, [serviceType, activeServices]);
 
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -293,6 +307,22 @@ export default function ServiceRequestPage() {
     return options[value] || value;
   };
 
+  // Replace your hardcoded service type options with dynamic options from the API
+  const renderServiceOptions = () => {
+    return (
+      <>
+        <option value="" disabled>
+          Select service type
+        </option>
+        {activeServices.map(service => (
+          <option key={service.id} value={service.type}>
+            {service.title}
+          </option>
+        ))}
+      </>
+    );
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -457,27 +487,7 @@ export default function ServiceRequestPage() {
                       onChange={handleInputChange}
                       required
                     >
-                      <option value="" disabled>
-                        Select service type
-                      </option>
-                      <option value="advertising">Advertising Services</option>
-                      <option value="electronics">Electronics Appliances</option>
-                      <option value="appliance_repair">Appliance Repair</option>
-                      <option value="computer_repair">
-                        Computer Repair / Laptop / Printer
-                      </option>
-                      <option value="ac_service">Air Conditioning</option>
-                      <option value="ro_repair">RO Repair</option>
-                      <option value="on_demand_driver">On Demand Driver</option>
-                      <option value="medical">Medical</option>
-                      <option value="nursing">Nursing</option>
-                      <option value="plumbing">Plumbing</option>
-                      <option value="painting">Painter</option>
-                      <option value="electrician">Electrician</option>
-                      <option value="cctv_installation">CCTV Installation</option>
-                      <option value="car_bike_wash">Dry Car and Bike Wash</option>
-                      <option value="cleaning">Home Cleaning</option>
-                      <option value="ac">AC Service</option>
+                      {renderServiceOptions()}
                     </select>
                     {errors.serviceType && (
                       <p className="text-red-500 text-sm mt-1">

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
+import { hasStoredToken } from '@/lib/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,14 +14,23 @@ export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('from') || '/';
+  const [isPageLoading, setIsPageLoading] = useState(true);
+
+  // Check for stored token on page load
+  useEffect(() => {
+    // This will ensure we wait for authentication context to be ready
+    if (!loading) {
+      setIsPageLoading(false);
+    }
+  }, [loading]);
 
   // If already authenticated, redirect to the redirect path
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isPageLoading && isAuthenticated) {
       router.push(redirectPath);
     }
-  }, [isAuthenticated, router, redirectPath]);
-
+  }, [isAuthenticated, router, redirectPath, isPageLoading]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -33,6 +43,16 @@ export default function Login() {
     }
   };
 
+  // Show loading spinner while checking authentication state
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  // Render login form if not authenticated
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">

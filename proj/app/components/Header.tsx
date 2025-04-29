@@ -11,7 +11,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isServicesOpen, setIsServicesOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
-  const { user, logout, isAuthenticated, isAdmin } = useAuth();
+  const { user, logout, isAuthenticated, isAdmin, token } = useAuth();
   const router = useRouter();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +50,30 @@ export default function Header() {
     e.stopPropagation(); // Prevent event bubbling
     setIsProfileOpen(!isProfileOpen);
   };
+
+  // Add an effect to periodically check token validity
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      const checkTokenInterval = setInterval(async () => {
+        try {
+          const response = await fetch('/api/auth/validate', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+          });
+          
+          if (!response.ok) {
+            console.log('Token validation failed, logging out');
+            logout();
+          }
+        } catch (error) {
+          console.error('Error checking token validity:', error);
+        }
+      }, 5 * 60 * 1000); // Check every 5 minutes
+      
+      return () => clearInterval(checkTokenInterval);
+    }
+  }, [isAuthenticated, token, logout]);
 
   return (
     <header className="bg-black text-white shadow-md">
