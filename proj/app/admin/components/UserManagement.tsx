@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
 import { Pencil, Trash2, UserPlus, Search, X, Package } from 'lucide-react';
 
 interface User {
@@ -32,6 +33,7 @@ interface Order {
 
 export default function UserManagement() {
   const { token } = useAuth();
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

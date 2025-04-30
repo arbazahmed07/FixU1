@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from './ToastContext';  
 
 interface User {
   id: string;
@@ -40,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isAdmin, setIsAdmin] = useState<boolean>(false); // Add admin state
   const router = useRouter();
+  const { showToast } = useToast(); // Add this line to access the toast functionality
 
   useEffect(() => {
     const initAuth = async () => {
@@ -199,6 +201,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     clearAuthState();
+    
+    // Make a request to the logout API endpoint
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(error => {
+      console.error('Error during logout API call:', error);
+    });
+    
+    // Show toast notification for logout
+    showToast('Successfully signed out!', 'success');
+    
     router.push('/');
   };
 

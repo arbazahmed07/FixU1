@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext'
 import { ChevronDown, ChevronUp, Edit, ExternalLink, RefreshCw, Search } from 'lucide-react';
 
 interface Order {
@@ -24,6 +25,7 @@ interface Order {
 
 export default function OrderManagement() {
   const { token } = useAuth();
+  const { showToast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,9 +127,13 @@ export default function OrderManagement() {
       
       setEditingOrderId(null);
       fetchOrders();
+      
+      // Add toast notification
+      showToast('Order updated successfully!', 'success');
     } catch (err) {
       console.error('Error updating order:', err);
       setError('Failed to update order. Please try again.');
+      showToast('Failed to update order. Please try again.', 'error');
     }
   };
 

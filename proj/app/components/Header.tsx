@@ -6,12 +6,14 @@ import Image from 'next/image';
 import { Menu, X, ChevronDown, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isServicesOpen, setIsServicesOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
-  const { user, logout, isAuthenticated, isAdmin, token } = useAuth();
+  const { user, logout: authLogout, isAuthenticated, isAdmin, token } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +66,7 @@ export default function Header() {
           
           if (!response.ok) {
             console.log('Token validation failed, logging out');
-            logout();
+            authLogout();
           }
         } catch (error) {
           console.error('Error checking token validity:', error);
@@ -73,7 +75,13 @@ export default function Header() {
       
       return () => clearInterval(checkTokenInterval);
     }
-  }, [isAuthenticated, token, logout]);
+  }, [isAuthenticated, token, authLogout]);
+
+  // Create a wrapper function for logout that includes the toast
+  const handleLogout = () => {
+    authLogout();
+    showToast('Successfully signed out!', 'success');
+  };
 
   return (
     <header className="bg-black text-white shadow-md">
@@ -165,7 +173,7 @@ export default function Header() {
                       </Link>
                     )}
                     <button
-                      onClick={() => logout()}
+                      onClick={() => handleLogout()}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Sign out
@@ -302,18 +310,9 @@ export default function Header() {
                     Admin Panel
                   </Link>
                 )}
-                {isAuthenticated && isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="block py-2 px-4 text-base hover:bg-gray-800"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Admin Panel
-                  </Link>
-                )}
                 <button
                   onClick={() => {
-                    logout();
+                    handleLogout();
                     setIsMenuOpen(false);
                   }}
                   className="block w-full text-left py-2 px-4 text-base hover:bg-gray-800"

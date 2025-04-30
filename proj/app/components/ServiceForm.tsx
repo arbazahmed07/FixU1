@@ -3,6 +3,7 @@ import { Phone, Mail, MessageCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useServices } from '../../contexts/ServicesContext';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function ServiceRequestPage() {
   const [formData, setFormData] = useState({
@@ -26,6 +27,7 @@ export default function ServiceRequestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const serviceType = searchParams.get('service');
+  const { showToast } = useToast();
 
   // Add more detailed logging for debugging
   useEffect(() => {
@@ -147,8 +149,8 @@ export default function ServiceRequestPage() {
 
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     
     // Check if user is authenticated first
     if (!isAuthenticated || !token) {
@@ -256,6 +258,9 @@ export default function ServiceRequestPage() {
         message: 'Your service request has been submitted successfully! We will contact you soon.',
       });
       
+      // Add toast notification
+      showToast('Your service request has been submitted successfully!', 'success');
+      
       // Reset form on successful submission
       setFormData({
         fullName: user?.name || '',
@@ -270,12 +275,13 @@ export default function ServiceRequestPage() {
       setTimeout(() => {
         router.push('/profile');
       }, 2000);
-    } catch (error) {
+    } catch (err) {
       setSubmitStatus({
         success: false,
         message: 'An error occurred while submitting your request. Please try again.',
       });
-      console.error('Submission error:', error);
+      console.error('Submission error:', err);
+      showToast('Failed to submit your request. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }

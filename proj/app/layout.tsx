@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { AuthProvider } from '../contexts/AuthContext';
 import { ServicesProvider } from '../contexts/ServicesContext';
+import { ToastProvider } from '../contexts/ToastContext';
 import './globals.css';
 
 const geistSans = Geist({
@@ -26,19 +27,25 @@ interface RootLayoutProps {
   children: ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col antialiased`}>
-        <AuthProvider>
-          <ServicesProvider>
-            <Header />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-          </ServicesProvider>
-        </AuthProvider>
+      <body className={geistSans.variable}>
+        <ToastProvider>
+          <AuthProvider>
+            <ServicesProvider>
+              <Header />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+            </ServicesProvider>
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );
