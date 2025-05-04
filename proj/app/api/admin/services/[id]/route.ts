@@ -57,7 +57,7 @@ export async function PUT(
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.isAdmin) {
+    if (!payload || typeof payload === 'string' || !('isAdmin' in payload) || !payload.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -117,7 +117,7 @@ export async function DELETE(
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.isAdmin) {
+    if (!payload || typeof payload === 'string' || !('isAdmin' in payload) || !payload.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -153,7 +153,7 @@ export async function PATCH(
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.isAdmin) {
+    if (!payload || typeof payload === 'string' || !('isAdmin' in payload) || !payload.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 

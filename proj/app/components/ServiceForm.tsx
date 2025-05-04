@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useServices } from '../../contexts/ServicesContext';
 import { useToast } from '../../contexts/ToastContext';
+import PaymentModal from './PaymentModal';
 
 export default function ServiceRequestPage() {
   const [formData, setFormData] = useState({
@@ -21,7 +22,10 @@ export default function ServiceRequestPage() {
     success: boolean;
     message: string;
   } | null>(null)
-  
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState('');
+  const [orderAmount, setOrderAmount] = useState(0);
+
   const { user, token, loading: authLoading, isAuthenticated, isAdmin } = useAuth()
   const { activeServices } = useServices();
   const router = useRouter();
@@ -29,7 +33,6 @@ export default function ServiceRequestPage() {
   const serviceType = searchParams.get('service');
   const { showToast } = useToast();
 
-  // Add more detailed logging for debugging
   useEffect(() => {
     console.log("Authentication state:", {
       isAuthenticated,
@@ -47,7 +50,6 @@ export default function ServiceRequestPage() {
     }
   }, [isAuthenticated, user, token])
 
-  // Add this useEffect to handle admin case
   useEffect(() => {
     if (isAdmin) {
       setSubmitStatus({
@@ -57,7 +59,6 @@ export default function ServiceRequestPage() {
     }
   }, [isAdmin]);
 
-  // Add this effect to populate the service type from URL
   useEffect(() => {
     if (serviceType && activeServices.length > 0) {
       setFormData(prev => ({
@@ -84,7 +85,7 @@ export default function ServiceRequestPage() {
     }
 
     setErrors((prev) => ({ ...prev, [name]: '' }))
-    setSubmitStatus(null) // Clear previous status when form is edited
+    setSubmitStatus(null)
   }
 
   const validateForm = () => {
@@ -124,12 +125,10 @@ export default function ServiceRequestPage() {
     router.push(`/login?from=/book`);
   }
 
-  // Add function to check token validity
   const checkTokenValidity = () => {
     if (!token) return false;
     
     try {
-      // Basic token parsing to check expiration
       const parts = token.split('.');
       if (parts.length !== 3) return false;
       
@@ -147,19 +146,15 @@ export default function ServiceRequestPage() {
     }
   };
 
-
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     
-    // Check if user is authenticated first
     if (!isAuthenticated || !token) {
       setSubmitStatus({
         success: false,
         message: 'Please log in to submit a service request.',
       });
       
-      // Redirect to login after a short delay
       setTimeout(() => {
         router.push('/login?from=/book');
       }, 2000);
@@ -167,7 +162,6 @@ export default function ServiceRequestPage() {
       return;
     }
     
-    // Prevent admins from submitting
     if (isAdmin) {
       setSubmitStatus({
         success: false,
@@ -176,14 +170,12 @@ export default function ServiceRequestPage() {
       return;
     }
     
-    // Check token validity
     if (!checkTokenValidity()) {
       setSubmitStatus({
         success: false,
         message: 'Your session has expired. Please log in again.',
       });
       
-      // Redirect to login after a short delay
       setTimeout(() => {
         router.push('/login?from=/book');
       }, 2000);
@@ -197,38 +189,21 @@ export default function ServiceRequestPage() {
     setSubmitStatus(null)
 
     try {
-      // Debug log for token
       console.log("Using token for request:", token.substring(0, 20) + "...");
       
-      // 1. Send the email notification
-      const emailResponse = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData),
-      })
+      const calculatedPrice = Math.floor(Math.random() * 2000) + 500;
       
-      if (!emailResponse.ok) {
-        const emailErrorText = await emailResponse.text();
-        console.error("Email API error:", emailErrorText);
-        throw new Error('Failed to send email notification');
-      }
-      
-      // 2. Create order in database
       const orderData = {
         serviceName: getServiceName(formData.serviceType),
         serviceProvider: "FixU Service Provider",
-        status: 'pending',
-        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default to tomorrow
-        price: Math.floor(Math.random() * 2000) + 500, // Random price between 500 and 2500
-        // address: "Customer address will be confirmed",
-        address: formData.message ,
+        status: 'pending', // Changed from 'pending_payment' to 'pending' to match allowed enum values
+        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        price: calculatedPrice,
+        address: formData.message,
         customerName: formData.fullName,
         customerPhone: formData.phoneNumber,
         customerEmail: formData.email,
-        // customerNotes: formData.message || "No additional notes"
+        paid: false
       };
 
       const orderResponse = await fetch('/api/orders', {
@@ -240,56 +215,101 @@ export default function ServiceRequestPage() {
         body: JSON.stringify(orderData),
       });
 
-      // Improved error handling
       if (!orderResponse.ok) {
-        const errorText = await orderResponse.text();
-        console.error("API error details:", {
-          status: orderResponse.status,
-          statusText: orderResponse.statusText,
-          errorBody: errorText
-        });
-        throw new Error(`API error: ${orderResponse.status} - ${errorText || 'Unknown error'}`);
+        let errorMessage = `API error: ${orderResponse.status} - ${orderResponse.statusText}`;
+        try {
+          const errorText = await orderResponse.text();
+          console.error("API error response:", errorText);
+          if (errorText) {
+            errorMessage += ` - ${errorText}`;
+          }
+        } catch (textError) {
+          console.error("Could not read error response text:", textError);
+        }
+        throw new Error(errorMessage);
       }
 
       const orderResult = await orderResponse.json();
+      
+      setCurrentOrderId(orderResult.orderId);
+      setOrderAmount(calculatedPrice);
+      
+      setShowPaymentModal(true);
+      
+    } catch (error) {
+      console.error("Order submission error:", error);
+      setSubmitStatus({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to submit your request. Please try again.',
+      });
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handlePaymentSuccess = async (paymentId: string) => {
+    try {
+      // Send email with payment information
+      const emailResponse = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          serviceType: formData.serviceType,
+          paymentId,
+          orderId: currentOrderId
+        }),
+      });
 
+      if (!emailResponse.ok) {
+        console.error('Failed to send confirmation email');
+      }
+
+      // Set success message
       setSubmitStatus({
         success: true,
-        message: 'Your service request has been submitted successfully! We will contact you soon.',
-      });
-      
-      // Add toast notification
-      showToast('Your service request has been submitted successfully!', 'success');
-      
-      // Reset form on successful submission
-      setFormData({
-        fullName: user?.name || '',
-        phoneNumber: user?.phone || '',
-        email: user?.email || '',
-        serviceType: '',
-        message: '',
-        agreeToTerms: false
+        message: 'Payment successful! Your service request has been confirmed.',
       });
 
+      // Close payment modal
+      setShowPaymentModal(false);
+      
+      // Ensure scrolling is re-enabled
+      document.body.style.overflow = '';
+      
+      // Reset current order ID to prevent reopening
+      setCurrentOrderId('');
+      
       // Redirect to profile page after a short delay
       setTimeout(() => {
         router.push('/profile');
       }, 2000);
-    } catch (err) {
+    } catch (error) {
+      console.error('Error processing payment success:', error);
       setSubmitStatus({
         success: false,
-        message: 'An error occurred while submitting your request. Please try again.',
+        message: 'Payment was processed but we encountered an error. Please contact support.',
       });
-      console.error('Submission error:', err);
-      showToast('Failed to submit your request. Please try again.', 'error');
-    } finally {
-      setIsSubmitting(false);
+      
+      // Ensure scrolling is re-enabled even on error
+      document.body.style.overflow = '';
     }
-  }
+  };
 
+  const handlePaymentModalClose = () => {
+    setShowPaymentModal(false);
+    // Only reset current order ID if payment was not successful
+    // This helps prevent reopening the modal
+    if (!submitStatus?.success) {
+      setCurrentOrderId('');
+    }
+    
+    // Ensure scrolling is re-enabled
+    document.body.style.overflow = '';
+  };
 
-
-  // Helper function to get full service name from value
   const getServiceName = (value: string): string => {
     const options: {[key: string]: string} = {
       "advertising": "Advertising Services",
@@ -313,7 +333,6 @@ export default function ServiceRequestPage() {
     return options[value] || value;
   };
 
-  // Replace your hardcoded service type options with dynamic options from the API
   const renderServiceOptions = () => {
     return (
       <>
@@ -504,7 +523,6 @@ export default function ServiceRequestPage() {
 
                   <div className="mb-4">
                     <label htmlFor="message" className="block mb-2">
-                      {/* Message (Optional) */}
                       Address
                     </label>
                     <textarea
@@ -563,6 +581,19 @@ export default function ServiceRequestPage() {
             </div>
           </div>
         </div>
+
+        {showPaymentModal && (
+          <PaymentModal
+            isOpen={showPaymentModal}
+            orderId={currentOrderId}
+            amount={orderAmount}
+            onClose={handlePaymentModalClose}
+            onSuccess={handlePaymentSuccess}
+            customerName={formData.fullName}
+            customerEmail={formData.email}
+            customerPhone={formData.phoneNumber}
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-lg shadow-md text-center">

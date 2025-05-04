@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
           </div>
           
           <div style="background-color: #f9fafb; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #4b5563;">Customer's Message:</h3>
+            <h3 style="margin-top: 0; color: #4b5563;">Customer's Address:</h3>
             <p style="margin-bottom: 0;">${message || 'No additional message provided.'}</p>
           </div>
           

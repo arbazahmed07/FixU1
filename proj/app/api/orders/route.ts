@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.userId) {
+    if (!payload || typeof payload === 'string' || !('userId' in payload)) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     const decoded = await verifyToken(token);
-    if (!decoded || !decoded.userId) {
+    if (!decoded || typeof decoded === 'string' || !('userId' in decoded)) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
@@ -69,14 +69,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    user.orders.push({
+    // Create order object
+    const newOrder = {
       ...orderData,
+      paymentStatus: 'pending',
       createdAt: new Date()
-    });
-
+    };
+    
+    // Add order to user
+    user.orders.push(newOrder);
     await user.save();
+    
+    // Find the ID of the newly created order
+    const createdOrder = user.orders[user.orders.length - 1];
+    // Type assertion to handle the unknown type
+    const orderId = createdOrder._id ? createdOrder._id.toString() : '';
 
-    return NextResponse.json({ success: true, message: 'Order saved successfully' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Order created successfully', 
+      orderId 
+    });
 
   } catch (error) {
     console.error("Order API error:", error);

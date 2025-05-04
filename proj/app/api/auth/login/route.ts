@@ -35,11 +35,11 @@ export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
     
     // Special case for admin
-    if (email === 'admin@gmail.com' && password === 'admin123') {
+    if (email === process.env.EMAIL && password === process.env.PASS) {
       // Generate proper JWT token for admin using the same method as regular users
       const adminPayload: TokenPayload = { 
         userId: 'admin-id', 
-        email: 'admin@fixu.in',
+        email: process.env.EMAIL ||'admin@fixu.in',
         isAdmin: true 
       };
       
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         user: {
           id: 'admin-id',
           name: 'Administrator',
-          email: 'admin@fixu.in',
+          email: process.env.EMAIL ||'admin@fixu.in',
           isAdmin: true
         }
       });

@@ -12,6 +12,7 @@ export interface IOrder extends Document {
   customerPhone?: string;
   customerEmail?: string;
   customerNotes?: string;
+  paymentId?: string;
   createdAt: Date;
 }
 
@@ -31,6 +32,7 @@ const OrderSchema: Schema<IOrder> = new Schema({
   customerPhone: { type: String },
   customerEmail: { type: String },
   customerNotes: { type: String },
+  paymentId: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

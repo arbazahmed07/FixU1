@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Verify token and extract user ID
     const payload = await verifyToken(token);
     
-    if (!payload || !payload.userId) {
+    if (!payload || typeof payload === 'string' || !('userId' in payload)) {
       return NextResponse.json({ valid: false, error: 'Invalid token' }, { status: 401 });
     }
     

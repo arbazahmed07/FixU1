@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.isAdmin) {
+    if (!payload || typeof payload === 'string' || !payload.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 

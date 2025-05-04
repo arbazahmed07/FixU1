@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTokenFromRequest } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {

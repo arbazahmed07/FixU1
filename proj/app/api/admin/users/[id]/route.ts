@@ -151,7 +151,7 @@ export async function GET(
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.isAdmin) {
+    if (!payload || typeof payload === 'string' || !payload.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -198,7 +198,7 @@ export async function PUT(
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.isAdmin) {
+    if (!payload || typeof payload === 'string' || !payload.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -214,7 +214,7 @@ export async function PUT(
     user.name = name;
     user.email = email;
     if (password) {
-      user.password = password; // Will be hashed by pre-save hook
+      user.password = password; 
     }
     user.phone = phone;
     user.isAdmin = isAdmin || false;
@@ -249,7 +249,7 @@ export async function DELETE(
     }
 
     const payload = await verifyToken(token);
-    if (!payload || !payload.isAdmin) {
+    if (!payload || typeof payload === 'string' || !payload.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
